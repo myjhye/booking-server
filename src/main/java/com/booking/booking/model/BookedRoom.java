@@ -41,6 +41,8 @@ public class BookedRoom {
     @Column(name = "total_guest")
     private int totalNumOfGuest;
 
+    // 예약 확인 코드 설정
+    @Setter
     @Column(name = "confirmation_code")
     private String bookingConfirmationCode;
 
@@ -73,12 +75,4 @@ public class BookedRoom {
         calculateTotalNumberOfGuest();
     }
 
-    // 예약 확인 코드 설정
-    public void setBookingConfirmationCode(String bookingConfirmationCode) {
-        this.bookingConfirmationCode = bookingConfirmationCode;
-    }
-
-    public void setRoom(Room room) {
-        this.room = room;
-    }
 }

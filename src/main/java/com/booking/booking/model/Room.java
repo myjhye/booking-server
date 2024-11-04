@@ -1,5 +1,10 @@
 // 전체 객실
 
+/*
+    데이터베이스와 직접 연결됨, 'room' 테이블과 매핑
+    객실 정보 저장
+ */
+
 package com.booking.booking.model;
 
 import jakarta.persistence.*;
@@ -59,4 +64,6 @@ public class Room {
         // 예약된 객실에 예약 코드 설정
         booking.setBookingConfirmationCode(bookingCode);
     }
+
+
 }
