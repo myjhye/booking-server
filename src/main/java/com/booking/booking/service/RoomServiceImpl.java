@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
 
+    // 신규 객실 추가
     // 객실 정보 설정하고, 사진 파일을 BLOB으로 변환해 데이터베이스에 저장
     @Override
     public Room addNewRoom(MultipartFile file, String roomType, BigDecimal roomPrice) throws SQLException, IOException {
@@ -36,5 +38,11 @@ public class RoomServiceImpl implements RoomService {
         }
 
         return roomRepository.save(room);
+    }
+
+    // 객실 유형 조회
+    @Override
+    public List<String> getAllRoomTypes() {
+        return roomRepository.findDistinctRoomTypes();
     }
 }

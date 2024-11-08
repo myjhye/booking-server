@@ -10,9 +10,15 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.List;
 
 public interface RoomService {
+
+    // 신규 객실 추가
     Room addNewRoom(MultipartFile photo,
                     String roomType,
                     BigDecimal roomPrice) throws SQLException, IOException;
+
+    // 객실 유형 조회
+    List<String> getAllRoomTypes();
 }

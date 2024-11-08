@@ -7,19 +7,18 @@ import com.booking.booking.response.RoomResponse;
 import com.booking.booking.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rooms")
+@CrossOrigin(origins = "http://localhost:5173")
 public class RoomController {
 
     private final RoomService roomService;
@@ -36,5 +35,12 @@ public class RoomController {
         RoomResponse response = new RoomResponse(savedRoom.getId(), savedRoom.getRoomType(), savedRoom.getRoomPrice());
 
         return ResponseEntity.ok(response);
+    }
+
+
+    // 객실 유형 조회
+    @GetMapping("/room-types")
+    public List<String> getRoomTypes() {
+        return roomService.getAllRoomTypes();
     }
 }
