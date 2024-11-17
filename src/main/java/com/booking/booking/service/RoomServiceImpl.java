@@ -4,6 +4,7 @@
 
 package com.booking.booking.service;
 
+import com.booking.booking.exception.ResourceNotFoundException;
 import com.booking.booking.model.Room;
 import com.booking.booking.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -44,5 +46,40 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public List<String> getAllRoomTypes() {
         return roomRepository.findDistinctRoomTypes();
+    }
+
+    // 전체 객실 조회
+    @Override
+    public List<Room> getAllRooms() {
+        return roomRepository.findAll();
+    }
+
+    // 개별 객실 이미지 조회
+    @Override
+    public byte[] getRoomPhotoByRoomId(Long roomId) {
+        Optional<Room> theRoom = roomRepository.findById(roomId);
+
+        if (theRoom.isEmpty()) {
+            throw new ResourceNotFoundException("요청한 객실이 없음");
+        }
+
+        Blob photoBlob = theRoom.get().getPhoto();
+        if (photoBlob != null) {
+            try {
+                return photoBlob.getBytes(1, (int) photoBlob.length());
+            } catch (SQLException e) {
+                e.printStackTrace();
+                throw new RuntimeException("사진을 불러오는 중 오류 발생", e);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void deleteRoom(Long roomId) {
+        Optional<Room> theRoom = roomRepository.findById(roomId);
+        if(theRoom.isPresent()) {
+            roomRepository.deleteById(roomId);
+        }
     }
 }

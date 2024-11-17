@@ -21,4 +21,13 @@ public interface RoomService {
 
     // 객실 유형 조회
     List<String> getAllRoomTypes();
+
+    // 전체 객실 조회
+    List<Room> getAllRooms();
+
+    // 개별 객실 이미지 조회
+    byte[] getRoomPhotoByRoomId(Long roomId);
+
+    // 객실 개별 삭제
+    void deleteRoom(Long roomId);
 }
