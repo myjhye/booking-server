@@ -4,6 +4,7 @@
 
 package com.booking.booking.service;
 
+import com.booking.booking.exception.InternalServerException;
 import com.booking.booking.exception.ResourceNotFoundException;
 import com.booking.booking.model.Room;
 import com.booking.booking.repository.RoomRepository;
@@ -75,11 +76,35 @@ public class RoomServiceImpl implements RoomService {
         return null;
     }
 
+    // 객실 개별 삭제
     @Override
     public void deleteRoom(Long roomId) {
         Optional<Room> theRoom = roomRepository.findById(roomId);
         if(theRoom.isPresent()) {
             roomRepository.deleteById(roomId);
         }
+    }
+
+    // 객실 개별 수정
+    @Override
+    public Room updateRoom(Long roomId, String roomType, BigDecimal roomPrice) {
+        Room room = roomRepository.findById(roomId)
+                        .orElseThrow(() -> new ResourceNotFoundException("해당 객실이 없습니다"));
+
+        if (roomType != null) {
+            room.setRoomType(roomType);
+        }
+
+        if (roomPrice != null) {
+            room.setRoomPrice(roomPrice);
+        }
+
+        return roomRepository.save(room);
+    }
+
+    // 객실 개별 조회
+    @Override
+    public Optional<Room> getRoomById(Long roomId) {
+        return Optional.of(roomRepository.findById(roomId).get());
     }
 }

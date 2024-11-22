@@ -3,6 +3,7 @@
 package com.booking.booking.controller;
 
 import com.booking.booking.exception.PhotoRetrievalException;
+import com.booking.booking.exception.ResourceNotFoundException;
 import com.booking.booking.model.BookedRoom;
 import com.booking.booking.model.Room;
 import com.booking.booking.response.BookingResponse;
@@ -15,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.sql.rowset.serial.SerialBlob;
+import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Blob;
@@ -22,6 +25,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -104,6 +108,37 @@ public class RoomController {
 
 
 
+    // 객실 개별 수정
+    @PutMapping("/update/{roomId}")
+    public ResponseEntity<RoomResponse> updateRoom(@PathVariable Long roomId,
+                                                   @RequestParam(required = false) String roomType,
+                                                   @RequestParam(required = false) BigDecimal roomPrice) throws SQLException, IOException {
+
+        // roomService를 통해 객실 정보 수정
+        Room theRoom = roomService.updateRoom(roomId, roomType, roomPrice);
+        // 수정된 Room 객체를 roomResponse(DTO)로 변환 --> 클라이언트에 전달
+        RoomResponse roomResponse = getRoomResponse(theRoom);
+
+        return ResponseEntity.ok(roomResponse);
+
+    }
+
+
+    // 객실 개별 조회
+    @GetMapping("/room/{roomId}")
+    public ResponseEntity<Optional<RoomResponse>> getRoomById(@PathVariable Long roomId) {
+
+        // roomService를 통해 roomId에 해당하는 객실 정보를 Optional<Room>으로 가져온다
+        // Optional<Room>: 해당 ID의 객실이 있을 수도 있고 없을 수도 있다
+        Optional<Room> theRoom = roomService.getRoomById(roomId);
+
+        // 데이터가 없으면 예외 발생
+        return theRoom.map((room) -> {
+            RoomResponse roomResponse = getRoomResponse(room);
+            return ResponseEntity.ok(Optional.of(roomResponse));
+        }).orElseThrow(() -> new ResourceNotFoundException("해당 객실이 없습니다"));
+    }
+
     // Room 객체를 RoomResponse로 변환
     private RoomResponse getRoomResponse(Room room) {
 
@@ -111,11 +146,11 @@ public class RoomController {
         List<BookedRoom> bookings = getaAllBookingsByRoomId(room.getId());
         // 각 예약 정보(bookings)를 BookingResponse 객체로 변환
         List<BookingResponse> bookingInfo = bookings.stream()
-                                                .map(booking -> new BookingResponse(booking.getBookingId(),
-                                                                                    booking.getCheckInDate(),
-                                                                                    booking.getCheckOutDate(),
-                                                                                    booking.getBookingConfirmationCode()))
-                                                .toList();
+                .map(booking -> new BookingResponse(booking.getBookingId(),
+                        booking.getCheckInDate(),
+                        booking.getCheckOutDate(),
+                        booking.getBookingConfirmationCode()))
+                .toList();
         byte[] photoBytes = null;
         // Room 객체의 객실 이미지 데이터
         Blob photoBlob = room.getPhoto();
@@ -136,7 +171,6 @@ public class RoomController {
                                 room.isBooked(),
                                 photoBytes,
                                 bookingInfo);
-
     }
 
     // 특정 객실의 예약 정보 조회

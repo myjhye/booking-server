@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 public interface RoomService {
 
@@ -30,4 +31,10 @@ public interface RoomService {
 
     // 객실 개별 삭제
     void deleteRoom(Long roomId);
+
+    // 객실 개별 수정
+    Room updateRoom(Long roomId, String roomType, BigDecimal roomPrice);
+
+    // 객실 개별 조회
+    Optional<Room> getRoomById(Long roomId);
 }
