@@ -1,3 +1,5 @@
+// 예약된 객실 DTO
+
 package com.booking.booking.response;
 
 import lombok.AllArgsConstructor;

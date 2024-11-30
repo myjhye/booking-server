@@ -143,7 +143,7 @@ public class RoomController {
     private RoomResponse getRoomResponse(Room room) {
 
         // 특정 Room의 모든 예약 정보 가져오기
-        List<BookedRoom> bookings = getaAllBookingsByRoomId(room.getId());
+        List<BookedRoom> bookings = getAllBookingsByRoomId(room.getId());
         // 각 예약 정보(bookings)를 BookingResponse 객체로 변환
         List<BookingResponse> bookingInfo = bookings.stream()
                 .map(booking -> new BookingResponse(booking.getBookingId(),
@@ -174,7 +174,7 @@ public class RoomController {
     }
 
     // 특정 객실의 예약 정보 조회
-    private List<BookedRoom> getaAllBookingsByRoomId(Long roomId) {
+    private List<BookedRoom> getAllBookingsByRoomId(Long roomId) {
         return bookingRoomService.getAllBookingsByRoomId(roomId);
     }
 }

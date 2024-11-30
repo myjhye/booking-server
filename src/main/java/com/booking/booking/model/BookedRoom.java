@@ -1,4 +1,6 @@
-// 예약된 객실
+// 예약 정보
+// ex) 체크인/아웃 날짜, 투숙객 이름, 예약 코드 등
+// ex) 101호실을 철수가 1월 1일부터 3일까지 예약했다
 
 package com.booking.booking.model;
 
@@ -57,22 +59,5 @@ public class BookedRoom {
         fetch = FetchType.LAZY: 필요할 때만 Room 정보를 불러와서 성능을 높임
         @JoinColumn(name = "room_id"): 예약이 어느 Room인지 연결
      */
-
-    // 전체 게스트 수
-    public void calculateTotalNumberOfGuest(){
-        this.totalNumOfGuest = this.NumOfAdults + NumOfChildren;
-    }
-
-    // 성인 수 설정 시 전체 게스트 수 자동 업데이트
-    public void setNumOfAdults(int numOfAdults) {
-        NumOfAdults = numOfAdults;
-        calculateTotalNumberOfGuest();
-    }
-
-    // 어린이 수 설정 시 전체 게스트 수 자동 업데이트
-    public void setNumOfChildren(int numOfChildren) {
-        NumOfChildren = numOfChildren;
-        calculateTotalNumberOfGuest();
-    }
 
 }
