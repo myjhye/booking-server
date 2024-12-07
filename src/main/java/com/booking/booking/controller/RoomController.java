@@ -11,6 +11,7 @@ import com.booking.booking.response.RoomResponse;
 import com.booking.booking.service.BookingRoomService;
 import com.booking.booking.service.RoomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -138,6 +140,45 @@ public class RoomController {
             return ResponseEntity.ok(Optional.of(roomResponse));
         }).orElseThrow(() -> new ResourceNotFoundException("해당 객실이 없습니다"));
     }
+
+
+    // 예약 가능 객실 검색
+    // @RequestParam: url에 쿼리 파라미터로 전달하는 값 --> /available-rooms?checkInDate=2024-12-04&checkOutDate=2024-12-05&roomType=deluxe
+    @GetMapping("/available-rooms")
+    public ResponseEntity<List<RoomResponse>> getAvailableRooms(@RequestParam("checkInDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
+                                                                @RequestParam("checkOutDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate,
+                                                                @RequestParam("roomType") String roomType) {
+
+        List<Room> availableRooms = roomService.getAvailableRooms(checkInDate, checkOutDate, roomType);
+        List<RoomResponse> roomResponses = new ArrayList<>();
+
+        for (Room room : availableRooms) {
+            // 현재 객실의 사진 데이터를 바이트 배열로 가져오기
+            byte[] photoBytes = roomService.getRoomPhotoByRoomId(room.getId());
+            if (photoBytes != null && photoBytes.length > 0) {
+                // 바이트 배열 --> Base64 문자열로 인코딩
+                String photoBase64 = Base64.getEncoder().encodeToString(photoBytes);
+                // Room 엔티티를 RoomResponse DTO로 변환
+                RoomResponse roomResponse = getRoomResponse(room);
+                // 변환된 DTO에 Base64로 인코딩된 사진 데이터 설정
+                roomResponse.setPhoto(photoBase64);
+                // 응답 리스트에 추가
+                roomResponses.add(roomResponse);
+            }
+        }
+
+        if (roomResponses.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        else {
+            // HTTP 200 OK 상태코드와 함께 데이터 반환
+            return ResponseEntity.ok(roomResponses);
+        }
+
+    }
+
+
+
 
     // Room 객체를 RoomResponse로 변환
     private RoomResponse getRoomResponse(Room room) {

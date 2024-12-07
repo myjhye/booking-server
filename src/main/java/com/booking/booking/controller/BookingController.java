@@ -26,20 +26,22 @@ public class BookingController {
     private final RoomService roomService;
 
     // 전체 객실 예약 정보 조회
-    @GetMapping("app-bookings")
+    @GetMapping("/all-bookings")
     public ResponseEntity<List<BookingResponse>> getAllBookings() {
-        // 서비스에서 전체 예약 정보 조회
+        // 1. 서비스에서 전체 예약 정보 조회
         List<BookedRoom> bookings = bookingRoomService.getAllBookings();
-        // DTO 변환을 위한 리스트 변수
+        // 2. 변환된 DTO를 담을 리스트 생성
         List<BookingResponse> bookingResponses = new ArrayList<>();
 
-        // 각 예약 정보(엔티티)를 DTO로 변환하고 리스트에 추가 (여러 개 -> for)
+        // 3. 각 예약 정보(엔티티)를 DTO로 변환하고 리스트에 추가
         for (BookedRoom booking : bookings) {
+            // 개별 예약 정보 변환 (방 정보 포함)
             BookingResponse bookingResponse = getBookingResponse(booking);
+            // 변환된 정보를 리스트에 추가
             bookingResponses.add(bookingResponse);
         }
 
-        // 변환된 DTO 리스트를 HTTP 200(OK)와 함께 반환
+        // 4. 변환된 예약 목록을 HTTP 200(OK)와 함께 반환
         return ResponseEntity.ok(bookingResponses);
     }
 
@@ -50,9 +52,12 @@ public class BookingController {
     @GetMapping("/confirmation/{confirmationCode}")
     public ResponseEntity<?> getBookingByConfirmationCode(@PathVariable String confirmationCode) {
         try {
+            // 1. 서비스로 예약 정보 조회
             BookedRoom booking = bookingRoomService.findByBookingConfirmationCode(confirmationCode);
+            // 2. 엔티티를 DTO로 변환
             BookingResponse bookingResponse = getBookingResponse(booking);
 
+            // 3. 성공 응답과 함께 예약 정보(bookingResponse) 반환
             return ResponseEntity.ok(bookingResponse);
         }
         catch (ResourceNotFoundException ex) {
@@ -87,14 +92,17 @@ public class BookingController {
     }
 
 
-    // BookedRoom 엔티티 -> BookingResponse DTO 변환
+    // Room 엔티티/BookedRoom 엔티티 -> RoomResponse DTO/BookingResponse DTO 변환
     // 예약 정보 반환 메소드에 사용 (getAllBookings, getBookingByConfirmationCode)
     private BookingResponse getBookingResponse(BookedRoom booking) {
         Room theRoom = roomService.getRoomById(booking.getRoom().getId()).get();
+
+        // Room 엔티티 -> RoomResponse DTO 변환 (3개 필드만 변환)
         RoomResponse room = new RoomResponse(theRoom.getId(),
                                             theRoom.getRoomType(),
                                             theRoom.getRoomPrice());
 
+        // BookedRoom 엔티티 -> BookingResponse DTO 변환 (전체 필드 변환)
         return new BookingResponse(booking.getBookingId(),
                                     booking.getCheckInDate(),
                                     booking.getCheckOutDate(),
