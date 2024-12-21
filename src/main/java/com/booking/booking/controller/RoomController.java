@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,27 +33,10 @@ import java.util.Optional;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rooms")
-@CrossOrigin(origins = "http://localhost:5173")
 public class RoomController {
 
     private final RoomService roomService;
     private final BookingRoomService bookingRoomService;
-
-    // 신규 객실 추가
-    @PostMapping("/add/new-room")
-    public ResponseEntity<RoomResponse> addNewRoom(@RequestParam("photo") MultipartFile photo,
-                                                   @RequestParam("roomType") String roomType,
-                                                   @RequestParam("roomPrice") BigDecimal roomPrice) throws SQLException, IOException {
-
-        // 클라이언트로부터 객실 정보 데이터(사진, 객실 타입, 가격)를 @RequestParam으로 받아서 roomService.addNewRoom 호출
-        Room savedRoom = roomService.addNewRoom(photo, roomType, roomPrice);
-        // 추가된 객실 정보를 RoomResponse 객체(DTO)로 변환해 클라이언트에 전달
-        RoomResponse response = new RoomResponse(savedRoom.getId(),
-                                                savedRoom.getRoomType(),
-                                                savedRoom.getRoomPrice());
-
-        return ResponseEntity.ok(response);
-    }
 
 
     // 객실 유형 조회
@@ -95,34 +79,6 @@ public class RoomController {
 
         // 모든 roomResponse 객체들이 담긴 리스트를 HTTP 응답으로 클라이언트에 반환
         return ResponseEntity.ok(roomResponses);
-    }
-
-
-
-
-    // 객실 개별 삭제
-    // @PathVariable: 경로에 포함된 {roomId} 값을 추출해 deleteRoom 메소드의 매개변수인 roomId에 전달
-    @DeleteMapping("/delete/room/{roomId}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId) {
-        roomService.deleteRoom(roomId);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-
-
-    // 객실 개별 수정
-    @PutMapping("/update/{roomId}")
-    public ResponseEntity<RoomResponse> updateRoom(@PathVariable Long roomId,
-                                                   @RequestParam(required = false) String roomType,
-                                                   @RequestParam(required = false) BigDecimal roomPrice) throws SQLException, IOException {
-
-        // roomService를 통해 객실 정보 수정
-        Room theRoom = roomService.updateRoom(roomId, roomType, roomPrice);
-        // 수정된 Room 객체를 roomResponse(DTO)로 변환 --> 클라이언트에 전달
-        RoomResponse roomResponse = getRoomResponse(theRoom);
-
-        return ResponseEntity.ok(roomResponse);
-
     }
 
 
@@ -207,15 +163,64 @@ public class RoomController {
 
         // Room 정보를 기반으로 RoomResponse 객체 생성 후 반환
         return new RoomResponse(room.getId(),
-                                room.getRoomType(),
-                                room.getRoomPrice(),
-                                room.isBooked(),
-                                photoBytes,
-                                bookingInfo);
+                room.getRoomType(),
+                room.getRoomPrice(),
+                room.isBooked(),
+                photoBytes,
+                bookingInfo);
     }
 
     // 특정 객실의 예약 정보 조회
     private List<BookedRoom> getAllBookingsByRoomId(Long roomId) {
         return bookingRoomService.getAllBookingsByRoomId(roomId);
     }
+
+
+
+    // 신규 객실 추가
+    @PostMapping("/add/new-room")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<RoomResponse> addNewRoom(@RequestParam("photo") MultipartFile photo,
+                                                   @RequestParam("roomType") String roomType,
+                                                   @RequestParam("roomPrice") BigDecimal roomPrice) throws SQLException, IOException {
+
+        // 클라이언트로부터 객실 정보 데이터(사진, 객실 타입, 가격)를 @RequestParam으로 받아서 roomService.addNewRoom 호출
+        Room savedRoom = roomService.addNewRoom(photo, roomType, roomPrice);
+        // 추가된 객실 정보를 RoomResponse 객체(DTO)로 변환해 클라이언트에 전달
+        RoomResponse response = new RoomResponse(savedRoom.getId(),
+                savedRoom.getRoomType(),
+                savedRoom.getRoomPrice());
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    // 객실 개별 수정
+    @PutMapping("/update/{roomId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<RoomResponse> updateRoom(@PathVariable Long roomId,
+                                                   @RequestParam(required = false) String roomType,
+                                                   @RequestParam(required = false) BigDecimal roomPrice) throws SQLException, IOException {
+
+        // roomService를 통해 객실 정보 수정
+        Room theRoom = roomService.updateRoom(roomId, roomType, roomPrice);
+        // 수정된 Room 객체를 roomResponse(DTO)로 변환 --> 클라이언트에 전달
+        RoomResponse roomResponse = getRoomResponse(theRoom);
+
+        return ResponseEntity.ok(roomResponse);
+
+    }
+
+
+
+    // 객실 개별 삭제
+    // @PathVariable: 경로에 포함된 {roomId} 값을 추출해 deleteRoom 메소드의 매개변수인 roomId에 전달
+    @DeleteMapping("/delete/room/{roomId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId) {
+        roomService.deleteRoom(roomId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+
 }
