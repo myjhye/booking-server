@@ -18,8 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.sql.rowset.serial.SerialBlob;
-import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Blob;
@@ -136,32 +134,39 @@ public class RoomController {
 
 
 
-    // Room 객체를 RoomResponse로 변환
+    // Room 엔티티 -> Room DTO 변환
     private RoomResponse getRoomResponse(Room room) {
 
-        // 특정 Room의 모든 예약 정보 가져오기
+        // 1. Room ID로 해당 객실의 전체 예약 내역을 조회
         List<BookedRoom> bookings = getAllBookingsByRoomId(room.getId());
-        // 각 예약 정보(bookings)를 BookingResponse 객체로 변환
-        List<BookingResponse> bookingInfo = bookings.stream()
-                .map(booking -> new BookingResponse(booking.getBookingId(),
-                        booking.getCheckInDate(),
-                        booking.getCheckOutDate(),
-                        booking.getBookingConfirmationCode()))
-                .toList();
-        byte[] photoBytes = null;
-        // Room 객체의 객실 이미지 데이터
-        Blob photoBlob = room.getPhoto();
+
+        // 2. 예약 엔티티(BookedRoom) 목록을 DTO(BookingResponse) 목록으로 변환
+        // stream()으로 순회하면서 각 BookedRoom을 BookingResponse로 변환(4개 필드만 사용)
+        List<BookingResponse> bookingInfo = bookings
+                                                .stream()
+                                                .map(booking -> new BookingResponse(
+                                                        booking.getBookingId(),
+                                                        booking.getCheckInDate(),
+                                                        booking.getCheckOutDate(),
+                                                        booking.getBookingConfirmationCode())
+                                                )
+                                                .toList(); // 변환된 DTO 목록을 List로 수집
+
+        // 3. Room 엔티티의 이미지(BLOB) 처리
+        byte[] photoBytes = null; // 이미지 데이터를 저장할 바이트 배열
+        Blob photoBlob = room.getPhoto(); // Room 엔티티에서 BLOB 형태의 이미지 데이터 가져오기
         if (photoBlob != null) {
             try {
-                // BLOB 데이터 -> byte[](바이트 배열)로 변환
+                // BLOB 데이터를 byte[] 형태로 변환
                 photoBytes = photoBlob.getBytes(1, (int) photoBlob.length());
             } catch (SQLException e) {
-                e.printStackTrace(); // 에러 로그 출력
+                e.printStackTrace();
+                // 이미지 처리 중 오류 발생 시 커스텀 예외 발생
                 throw new PhotoRetrievalException("객실 이미지 불러오는 중 오류 발생");
             }
         }
 
-        // Room 정보를 기반으로 RoomResponse 객체 생성 후 반환
+        // 4. Room 엔티티 정보를 기반으로 RoomResponse DTO 생성 후 반환
         return new RoomResponse(room.getId(),
                 room.getRoomType(),
                 room.getRoomPrice(),

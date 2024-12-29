@@ -27,7 +27,7 @@ public class RoleController {
     public ResponseEntity<String> createRole(@RequestBody Role theRole) {
         try {
             roleService.createRole(theRole);
-            return ResponseEntity.ok("신규 역할이 성공적으로 생성 되었습니다");
+            return ResponseEntity.ok("new role created successfully");
         }
         catch (RoleAlreadyExistException re){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(re.getMessage());

@@ -116,6 +116,13 @@ public class BookingRoomServiceImpl implements BookingRoomService {
         return bookingRepository.findAll();
     }
 
+
+    // 개인 예약 조회
+    @Override
+    public List<BookedRoom> getBookingsByUserEmail(String email) {
+        return bookingRepository.findByGuestEmail(email);
+    }
+
     // 예약 확인 코드로 특정 예약 정보 조회
     @Override
     public BookedRoom findByBookingConfirmationCode(String confirmationCode) {

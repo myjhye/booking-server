@@ -25,6 +25,7 @@ public class HotelUserDetails implements UserDetails {
     private String email;
     private String password;
     private Collection<GrantedAuthority> authorities;
+    private User user;
 
     // DB의 User 정보를 Spring Security용 UserDetails로 변환해주자
     public static HotelUserDetails buildUserDetails(User user) {
@@ -40,7 +41,8 @@ public class HotelUserDetails implements UserDetails {
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
-                authorities
+                authorities,
+                user
         );
     }
 

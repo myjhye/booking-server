@@ -76,13 +76,15 @@ public class WebSecurityConfig {
             // 세션은 JWT 쓸 거니까 사용하지 마라
             .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // URL별 접근 권한은 이렇게 설정한다
-            .authorizeHttpRequests((auth) -> auth
-                                                // 누구나 접근 가능
-                                                .requestMatchers("/auth/**", "/rooms/**")
-                                                // 관리자만 접근 가능
-                                                .permitAll().requestMatchers("/roles/**").hasRole("ADMIN")
-                                                // 로그인한 사용자만 접근 가능
-                                                .anyRequest().authenticated());
+            .authorizeHttpRequests(
+                    (auth) -> auth
+                        // 누구나 접근 가능
+                        .requestMatchers("/auth/**", "/rooms/**", "/boards/**").permitAll()
+                        // 관리자만 접근 가능
+                        .requestMatchers("/roles/**").hasRole("ADMIN")
+                        // 로그인한 사용자만 접근 가능
+                        .anyRequest().authenticated()
+            );
 
         // 인증은 위 방식으로 처리해라
         http.authenticationProvider(authenticationProvider());

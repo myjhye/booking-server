@@ -23,4 +23,6 @@ public interface BookingRoomService {
     // 시스템의 전체 예약 내역 조회
     List<BookedRoom> getAllBookings();
 
+    // 개인 예약 조회
+    List<BookedRoom> getBookingsByUserEmail(String email);
 }

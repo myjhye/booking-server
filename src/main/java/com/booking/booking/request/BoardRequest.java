@@ -3,12 +3,11 @@ package com.booking.booking.request;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
-// 클라이언트의 로그인 요청 데이터(DTO)
 @Data
-public class LoginRequest {
+public class BoardRequest {
 
     @NotBlank
-    private String email;
+    private String title;
     @NotBlank
-    private String password;
+    private String content;
 }

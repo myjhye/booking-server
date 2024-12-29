@@ -23,7 +23,7 @@ public class UserController {
     @GetMapping("/all")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<User>> getUsers() {
-        return new ResponseEntity<>(userService.getUsers(), HttpStatus.FOUND);
+        return ResponseEntity.ok(userService.getUsers());
     }
 
     // 개별 유저 조회
@@ -38,24 +38,25 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
         catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("유저 데이터를 가져오는 데 에러 발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error for selecting a user");
         }
     }
 
 
     // 개별 유저 삭제
-    @DeleteMapping("/delete/{userId}")
+    @DeleteMapping("/delete/{email}")
     @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #email == principal.username)")
-    public ResponseEntity<String> deleteUser(@PathVariable("userId") String email) {
+    public ResponseEntity<String> deleteUser(@PathVariable("email") String email) {
         try {
             userService.deleteUser(email);
-            return ResponseEntity.ok("유저가 성공적으로 삭제 되었습니다");
+            return ResponseEntity.ok("user deleted successfully");
         }
         catch (UsernameNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
         catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("유저 삭제하는 데 에러 발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to delete user: " + email);
         }
     }
 }

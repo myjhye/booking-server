@@ -32,7 +32,7 @@ public class RoleServiceImpl implements  RoleService {
         String roleName = "ROLE_" + theRole.getName().toUpperCase();
         Role role = new Role(roleName);
         if (roleRepository.existsByName(roleName)) {
-            throw new RoleAlreadyExistException("이미 등록된 역할입니다: " + theRole.getName());
+            throw new RoleAlreadyExistException("the role already exists: " + theRole.getName());
         }
         return roleRepository.save(role);
     }

@@ -29,16 +29,16 @@ public class BookedRoom {
     private LocalDate checkOutDate;
 
     @Column(name = "guest_fullName")
-    private String guestFullName;
 
+    private String guestFullName;
     @Column(name = "guest_email")
     private String guestEmail;
 
     @Column(name = "adults")
-    private int NumOfAdults;
+    private int numOfAdults;
 
     @Column(name = "children")
-    private int NumOfChildren;
+    private int numOfChildren;
 
     @Column(name = "total_guest")
     private int totalNumOfGuest;
