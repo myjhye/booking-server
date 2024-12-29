@@ -39,4 +39,10 @@ public class BoardServiceImpl implements BoardService {
     public Board updatedBoard(Board existingBoard) {
         return boardRepository.save(existingBoard);
     }
+
+    // 게시글 삭제
+    @Override
+    public void deleteBoard(Long boardId) {
+        boardRepository.deleteById(boardId);
+    }
 }

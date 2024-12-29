@@ -88,6 +88,8 @@ public class BoardController {
             @PathVariable Long boardId,
             @Valid @RequestBody BoardRequest request
     ) {
+
+        // 1. 현재 인증된 사용자 정보 가져오기
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null && authentication.getPrincipal() instanceof HotelUserDetails) {
@@ -118,5 +120,40 @@ public class BoardController {
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+
+    // 게시글 삭제
+    @DeleteMapping("/{boardId}")
+    @Transactional
+    public ResponseEntity<Void> deleteBoard(@PathVariable Long boardId) {
+
+        // 1. 현재 인증된 사용자 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.getPrincipal() instanceof HotelUserDetails) {
+            HotelUserDetails userDetails = (HotelUserDetails) authentication.getPrincipal();
+            User user = userDetails.getUser();
+
+            // 2. 삭제하려는 게시글 조회
+            Board existingBoard = boardService.getBoardById(boardId);
+
+            if (existingBoard == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // 3. 현재 사용자가 게시글 작성자인지 확인
+            if (!existingBoard.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // 4. 게시글 삭제
+            boardService.deleteBoard(boardId);
+
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
     }
 }
