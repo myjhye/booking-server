@@ -27,5 +27,24 @@ public class CommentServiceImpl implements CommentService {
         return commentRepository.findByBoardIdOrderByCreatedAtDesc(boardId);
     }
 
+    // 댓글 개별 조회
+    @Override
+    public Comment getCommentById(Long commentId) {
+        return commentRepository.findById(commentId)
+                .orElse(null);
+    }
+
+    // 댓글 수정
+    @Override
+    public Comment updateComment(Comment existingComment) {
+        return commentRepository.save(existingComment);
+    }
+
+    // 댓글 삭제
+    @Override
+    public void deleteComment(Long commentId) {
+        commentRepository.deleteById(commentId);
+    }
+
 
 }

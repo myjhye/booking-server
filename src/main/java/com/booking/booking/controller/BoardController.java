@@ -1,6 +1,7 @@
 package com.booking.booking.controller;
 
 import com.booking.booking.model.Board;
+import com.booking.booking.model.Comment;
 import com.booking.booking.model.User;
 import com.booking.booking.request.BoardRequest;
 import com.booking.booking.response.BoardResponse;
@@ -156,4 +157,6 @@ public class BoardController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
     }
+
+
 }

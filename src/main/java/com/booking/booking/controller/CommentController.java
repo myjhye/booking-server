@@ -2,8 +2,8 @@ package com.booking.booking.controller;
 
 import com.booking.booking.model.Comment;
 import com.booking.booking.model.User;
-import com.booking.booking.request.CommentRequest;
-import com.booking.booking.response.BoardResponse;
+import com.booking.booking.request.CreateCommentRequest;
+import com.booking.booking.request.UpdateCommentRequest;
 import com.booking.booking.response.CommentResponse;
 import com.booking.booking.security.user.HotelUserDetails;
 import com.booking.booking.service.CommentService;
@@ -32,7 +32,7 @@ public class CommentController {
     @PostMapping("/add/new-comment")
     @Transactional
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<CommentResponse> createComment(@Valid @RequestBody CommentRequest request) {
+    public ResponseEntity<CommentResponse> createComment(@Valid @RequestBody CreateCommentRequest request) {
 
         // 1. 현재 Security Context에서 인증 정보(로그인된 사용자의 인증 객체)를 가져옴
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -71,4 +71,81 @@ public class CommentController {
 
         return ResponseEntity.ok(commentResponses);
     }
+
+
+    // 댓글 수정
+    @PutMapping("/{commentId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<CommentResponse> updateComment(
+            @PathVariable Long commentId,
+            @Valid @RequestBody UpdateCommentRequest request
+    ) {
+        // 1. 현재 인증된 사용자 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.getPrincipal() instanceof HotelUserDetails) {
+
+            HotelUserDetails userDetails = (HotelUserDetails) authentication.getPrincipal();
+            User user = userDetails.getUser();
+
+            // 2. 수정하려는 댓글 조회
+            Comment existingComment = commentService.getCommentById(commentId);
+            
+
+            // 3. 수정하려는 댓글이 존재하지 않는 경우
+            if (existingComment == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // 4. 댓글 작성자와 현재 로그인한 사용자가 일치하는지 확인
+            if (!existingComment.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // 5. 댓글 내용 업데이트
+            existingComment.setContent(request.getContent());
+
+            // 6. 댓글 저장
+            Comment updatedComment = commentService.updateComment(existingComment);
+
+            // 7. 응답 반환
+            return ResponseEntity.ok(new CommentResponse(updatedComment));
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+
+    // 댓글 삭제
+    @DeleteMapping("/{commentId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.getPrincipal() instanceof HotelUserDetails) {
+            HotelUserDetails userDetails = (HotelUserDetails) authentication.getPrincipal();
+            User user = userDetails.getUser();
+
+            // 2. 삭제하려는 댓글 조회
+            Comment existingComment = commentService.getCommentById(commentId);
+
+            if (existingComment == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // 3. 현재 사용자가 댓글 작성자인지 확인
+            if (!existingComment.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // 4. 댓글 삭제
+            commentService.deleteComment(commentId);
+
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
 }
