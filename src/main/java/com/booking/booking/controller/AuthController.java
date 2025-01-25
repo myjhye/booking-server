@@ -3,10 +3,14 @@ package com.booking.booking.controller;
 import com.booking.booking.exception.UserAlreadyExistsException;
 import com.booking.booking.model.User;
 import com.booking.booking.request.LoginRequest;
+import com.booking.booking.request.RefreshTokenRequest;
 import com.booking.booking.response.JwtResponse;
+import com.booking.booking.response.TokenRefreshResponse;
 import com.booking.booking.security.jwt.JwtUtils;
 import com.booking.booking.security.user.HotelUserDetails;
+import com.booking.booking.service.RefreshTokenService;
 import com.booking.booking.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +19,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +35,8 @@ public class AuthController {
 
     // 회원가입, 회원정보 수정 등 사용자 관련 비즈니스 로직 처리
     private final UserService userService;
+
+    private final RefreshTokenService refreshTokenService;
 
     // 실제 로그인 인증 실행하는 매니저
     private final AuthenticationManager authenticationManager;
@@ -52,6 +59,7 @@ public class AuthController {
     }
 
 
+    // 로그인
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
@@ -75,12 +83,13 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         // 등록했으니 JWT 토큰을 만들어주자
-        String jwt = jwtUtils.generateJwtTokenForUser(authentication);
+        String accessToken = jwtUtils.generateJwtTokenForUser(authentication);
+        String refreshToken = jwtUtils.generateRefreshToken(authentication);
 
         // JWT 토큰에 넣을 사용자 정보(principal)를 가져오자
         // (HotelUserDetails)로 사용자 정보 형태 재변환 -> getPrincipal()이 Object 형태라서
         HotelUserDetails userDetails = (HotelUserDetails) authentication.getPrincipal();
-
+        refreshTokenService.saveRefreshToken(userDetails.getEmail(), refreshToken);
 
         // 이 사용자가 가진 권한 목록도 가져오자
         List<String> roles = userDetails.getAuthorities()
@@ -93,9 +102,66 @@ public class AuthController {
         return ResponseEntity.ok(new JwtResponse(
                 userDetails.getId(), // 사용자 ID
                 userDetails.getEmail(), // 이메일
-                jwt, // JWT 토큰
-                roles)); // 권한
+                accessToken, // JWT 토큰
+                refreshToken,
+                roles // 권한
+        ));
 
 
+    }
+
+
+    // 로그아웃
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        // 1. 요청 헤더에서 액세스 토큰 추출
+        String accessToken = request.getHeader("Authorization")
+                                    .replace("Bearer ", "");
+
+        // 2. JWT 토큰에서 사용자 이메일 추출
+        String userEmail = jwtUtils.getUserNameFromToken(accessToken);
+
+        // 3. 로그아웃 처리
+        refreshTokenService.logout(userEmail, accessToken);
+
+        return ResponseEntity.ok().body("logged out!");
+    }
+
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        try {
+            // 1. 리프레시 토큰에서 이메일 추출
+            String userEmail = jwtUtils.getUserNameFromToken(request.getRefreshToken());
+
+            // 2. 리프레시 토큰 유효성 검증
+            if (refreshTokenService.validateRefreshToken(userEmail, request.getRefreshToken())) {
+                // 유저 정보 조회
+                User user = userService.getUser(userEmail);
+
+                // 새로운 액세스 토큰 생성
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                HotelUserDetails.buildUserDetails(user), // User를 HotelUserDetails로 변환
+                                null,
+                                user.getRoles().stream()
+                                        .map(role -> new SimpleGrantedAuthority(role.getName()))
+                                        .toList()
+                        );
+
+                // 보안 컨텍스트 업데이트
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                String newAccessToken = jwtUtils.generateJwtTokenForUser(authentication);
+
+                // 응답 반환
+                return ResponseEntity.ok(new TokenRefreshResponse(newAccessToken, request.getRefreshToken()));
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Error processing refresh token");
+        }
     }
 }

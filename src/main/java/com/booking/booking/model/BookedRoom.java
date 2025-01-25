@@ -54,10 +54,4 @@ public class BookedRoom {
     // 예약이 어느 Room(객실)과 관련이 있는지 저장
     private Room room;
 
-    /*
-        @ManyToOne: 여러 예약이 같은 Room과 연결될 수 있음
-        fetch = FetchType.LAZY: 필요할 때만 Room 정보를 불러와서 성능을 높임
-        @JoinColumn(name = "room_id"): 예약이 어느 Room인지 연결
-     */
-
 }

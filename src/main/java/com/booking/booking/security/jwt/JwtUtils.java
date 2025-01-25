@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,14 @@ public class JwtUtils {
     // 에러 로그를 남길 도구
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
+    private final RedisTemplate<String, String> redisTemplate;
+
+    // 생성자 추가
+    public JwtUtils(RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
+
     // application.properties에서 설정한 비밀키
     @Value("${app.jwt-secret}")
     private String jwtSecret;
@@ -29,6 +38,27 @@ public class JwtUtils {
     // application.properties에서 설정한 토큰 만료 시간(ms)
     @Value("${app.jwt-expiration-milliseconds}")
     private int jwtExpirationTime;
+
+    @Value("${app.jwt-refresh-expiration-milliseconds}")
+    private int refreshTokenExpirationTime;
+
+
+
+    // 토큰의 남은 만료 시간 계산
+    public long getRemainingTime(String token) {
+        Claims claims = Jwts.parserBuilder()
+                            .setSigningKey(key())
+                            .build()
+                            .parseClaimsJws(token)
+                            .getBody();
+
+        Date expiration = claims.getExpiration();
+
+        return expiration.getTime() - new Date().getTime();
+    }
+
+
+
 
     // 로그인 성공한 사용자 정보로 JWT 토큰 만들어줘
     public String generateJwtTokenForUser(Authentication authentication) {
@@ -52,6 +82,23 @@ public class JwtUtils {
     }
 
 
+    // 리프레시 토큰 생성
+    public String generateRefreshToken(Authentication authentication) {
+        HotelUserDetails userPrincipal = (HotelUserDetails) authentication.getPrincipal();
+
+        return Jwts.builder()
+                .setSubject(userPrincipal.getUsername())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date((new Date()).getTime() + refreshTokenExpirationTime))
+                .signWith(key(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public int getRefreshTokenExpirationTime() {
+        return refreshTokenExpirationTime;
+    }
+
+
     // 비밀키로 토큰을 암호화/복호화할 수 있는 키를 만들어줘 --> jwtSecret를 실제로 암호화에 사용할 수 있는 형태로 변환
     private Key key() {
         // 1. BASE64로 인코딩된 문자열을 디코딩
@@ -72,13 +119,24 @@ public class JwtUtils {
     }
 
 
+
+
     //  JWT 토큰이 유효한지 검사해줘
     public boolean validateToken(String token) {
         try {
-            // 토큰을 해석해봐서 문제가 없으면 true 반환
+            // 1. 블랙리스트 체크
+            String isLogout = redisTemplate.opsForValue().get("BLACKLIST:" + token);
+            if (isLogout != null) {
+                logger.error("This token is in blacklist");
+                return false;
+            }
+
+            // 2. 기존 검증 로직
             Jwts.parserBuilder().setSigningKey(key()).build().parse(token);
+
             return true;
         }
+
         catch (MalformedJwtException e) {
             // 토큰 형식이 잘못 됐어
             logger.error("Invalid jwt token: {} ", e.getMessage());
@@ -97,5 +155,8 @@ public class JwtUtils {
         }
 
         return false;
+
     }
+
+
 }

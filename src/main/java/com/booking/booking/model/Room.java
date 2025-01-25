@@ -30,17 +30,9 @@ public class Room {
     @Lob
     private Blob photo;
 
-    // 한 객실의 예약 목록 --> 한 객실(Room)에 여러 예약 정보(BookedRoom)를 받는다 (1:N)
+    // 한 객실의 예약 목록 -> 한 객실(Room)에 여러 예약 정보(BookedRoom)를 받는다 (1:N)
     @OneToMany(mappedBy="room", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<BookedRoom> bookings;
-
-    /*
-        @OneToMany: Room이 여러 BookedRoom과 연결됨
-        mappedBy="room": BookedRoom의 room 필드로 매핑
-        fetch = FetchType.LAZY: 필요할 때만 로딩
-        cascade = CascadeType.ALL: Room변경시 예약정보도 함께 변경
-     */
-
 
     // 기본 생성자
     public Room() {

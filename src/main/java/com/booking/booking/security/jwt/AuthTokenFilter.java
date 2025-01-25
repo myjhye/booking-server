@@ -33,25 +33,25 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     // 에러 로그를 남길 도구
     private static final Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
 
-    // 모든 요청마다 이렇게 검증해라
-    // 1. 토큰 검증 하고 (jwtUtils.validateToken(jwt))
-    // 2. 토큰에서 이메일 추출해서 DB에서 사용자 찾고 (jwtUtils.getUserNameFromToken(jwt))
-    // 인증 객체 만들어서 SecurityContext에 저장 -> 이러면 Spring Security가 인증된 사용자로 인식해서 재로그인 없이 서비스 이용 가능
+    // 모든 HTTP 요청에 대해 JWT 토큰을 검증하는 필터 메소드
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            // 요청에서 토큰을 꺼내서 검증해봐
+            // 1. HTTP 요청 헤더에서 JWT 토큰 추출 ('Bearer ' 제거)
             String jwt = parseJwt(request);
+
+            // 2. 토큰이 존재하고 유효한 경우
             if (jwt != null && jwtUtils.validateToken(jwt)) {
-                // 토큰에서 이메일을 꺼내고
+                // 3. JWT 토큰에서 사용자 이메일(subject)을 꺼내고
                 String email = jwtUtils.getUserNameFromToken(jwt);
-                // 이메일로 DB에서 사용자 정보를 찾아
+
+                // 4. 이메일로 DB에서 사용자 정보 조회
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                // 찾은 사용자 정보로 인증 객체를 만들어 --> 누가 로그인 했는지(principal), 어떤 권한을 가졌는지(authorities)를 Spring Security에 알려준다
+                // 5. 인증 객체 생성 및 SecurityContext에 저장
                 var authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, // principal: 인증된 사용자의 정보
                         null, // credentials: 비밀번호 (보안을 위해 null로 설정)

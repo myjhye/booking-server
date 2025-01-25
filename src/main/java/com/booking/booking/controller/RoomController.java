@@ -185,16 +185,20 @@ public class RoomController {
     // 신규 객실 추가
     @PostMapping("/add/new-room")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<RoomResponse> addNewRoom(@RequestParam("photo") MultipartFile photo,
-                                                   @RequestParam("roomType") String roomType,
-                                                   @RequestParam("roomPrice") BigDecimal roomPrice) throws SQLException, IOException {
+    public ResponseEntity<RoomResponse> addNewRoom(
+            @RequestParam("photo") MultipartFile photo,
+            @RequestParam("roomType") String roomType,
+            @RequestParam("roomPrice") BigDecimal roomPrice
+    ) throws SQLException, IOException {
 
         // 클라이언트로부터 객실 정보 데이터(사진, 객실 타입, 가격)를 @RequestParam으로 받아서 roomService.addNewRoom 호출
         Room savedRoom = roomService.addNewRoom(photo, roomType, roomPrice);
         // 추가된 객실 정보를 RoomResponse 객체(DTO)로 변환해 클라이언트에 전달
-        RoomResponse response = new RoomResponse(savedRoom.getId(),
-                savedRoom.getRoomType(),
-                savedRoom.getRoomPrice());
+        RoomResponse response = new RoomResponse(
+                                        savedRoom.getId(),
+                                        savedRoom.getRoomType(),
+                                        savedRoom.getRoomPrice()
+                                    );
 
         return ResponseEntity.ok(response);
     }

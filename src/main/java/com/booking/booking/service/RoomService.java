@@ -17,9 +17,11 @@ import java.util.Optional;
 public interface RoomService {
 
     // 신규 객실 추가
-    Room addNewRoom(MultipartFile photo,
-                    String roomType,
-                    BigDecimal roomPrice) throws SQLException, IOException;
+    Room addNewRoom(
+        MultipartFile photo,
+        String roomType,
+        BigDecimal roomPrice
+    ) throws SQLException, IOException;
 
     // 객실 유형 조회
     List<String> getAllRoomTypes();
