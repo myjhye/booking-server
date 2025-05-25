@@ -63,7 +63,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
-        // 이메일과 비밀번호가 데이터베이스에 있는 사용자인지 확인하자 (AuthTokenFilter의 doFilterInternal 메소드 실행 -> 인증 객체 생성)
+        // 1. 사용자가 입력한 이메일/비밀번호로 인증 시도
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(), // 입력한 이메일
@@ -79,26 +79,25 @@ public class AuthController {
             4. Details - 추가 정보
          */
 
-        // 확인된 사용자니까 시스템(SecurityContextHolder)에 등록해두자
+        // 2. 인증 성공 시, 사용자 정보를 SecurityContext에 저장
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // 등록했으니 JWT 토큰을 만들어주자
+        // 3. JWT Access, Refresh 토큰 생성
         String accessToken = jwtUtils.generateJwtTokenForUser(authentication);
         String refreshToken = jwtUtils.generateRefreshToken(authentication);
 
-        // JWT 토큰에 넣을 사용자 정보(principal)를 가져오자
-        // (HotelUserDetails)로 사용자 정보 형태 재변환 -> getPrincipal()이 Object 형태라서
+        // 4. 사용자 정보와 토큰 저장
         HotelUserDetails userDetails = (HotelUserDetails) authentication.getPrincipal();
         refreshTokenService.saveRefreshToken(userDetails.getEmail(), refreshToken);
 
-        // 이 사용자가 가진 권한 목록도 가져오자
+        // 5. 권한 정보 추출 및 응답
         List<String> roles = userDetails.getAuthorities()
                                         .stream()
                                         .map(GrantedAuthority::getAuthority)
                                         .toList();
 
 
-        // 자, 이제 토큰이랑 사용자 정보를 클라이언트에게 보내주자
+        // 6. 응답 객체로 토큰 전달
         return ResponseEntity.ok(new JwtResponse(
                 userDetails.getId(), // 사용자 ID
                 userDetails.getEmail(), // 이메일

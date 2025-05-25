@@ -14,29 +14,30 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-// DB에서 가져온 사용자 정보를 Spring Security가 이해할 수 있는 형태로 변환
+// DB에서 가져온 사용자 정보를 Spring Security에서 사용할 수 있도록 변환하는 클래스
+// Spring Security는 이 UserDetails 객체를 통해 인증된 사용자 정보를 추적함
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class HotelUserDetails implements UserDetails {
-    // 사용자 정보
-    private Long id;
-    private String email;
-    private String password;
-    private Collection<GrantedAuthority> authorities;
-    private User user;
 
-    // DB의 User 정보를 Spring Security용 UserDetails로 변환해주자
+    private Long id; // 사용자 고유 ID
+    private String email; // 사용자 이메일 (Spring Security에서 username으로 사용됨)
+    private String password; // 암호화된 비밀번호
+    private Collection<GrantedAuthority> authorities; // 사용자의 권한 목록 (ROLE_USER, ROLE_ADMIN 등)
+    private User user; // 원본 User 엔티티 (필요 시 서비스 레벨에서 접근 가능)
+
+    // --- 정적 메서드: DB User 객체 → Spring Security용 UserDetails 객체로 변환 ---
     public static HotelUserDetails buildUserDetails(User user) {
 
-        // 사용자의 권한 정보를 Spring Security가 이해할 수 있는 형태로 변환
+        // 사용자 Role 리스트를 Spring Security 권한 객체로 변환
         List<GrantedAuthority> authorities = user.getRoles()
                                                  .stream()
                                                  .map((role) -> new SimpleGrantedAuthority(role.getName()))
                                                  .collect(Collectors.toList());
 
-        // 변환된 정보로 UserDetails 객체 생성
+        // 변환된 정보를 담은 HotelUserDetails 객체 생성
         return new HotelUserDetails(
                 user.getId(),
                 user.getEmail(),
@@ -46,53 +47,50 @@ public class HotelUserDetails implements UserDetails {
         );
     }
 
-    // --- Spring Security가 필요로 하는 기본 정보들 ---
+    // --- UserDetails 인터페이스 구현 메서드들 ---
 
-    // 이 사용자의 권한 목록
+    // Spring Security가 사용자 권한 조회 시 호출
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
     }
 
-    // 비밀번호
+    // Spring Security가 비밀번호 비교 시 호출
     @Override
     public String getPassword() {
         return password;
     }
 
-    // 사용자 식별용 이메일
+    // Spring Security가 사용자 식별 시 호출 (username 역할, 여기선 email)
     @Override
     public String getUsername() {
         return email;
     }
 
 
-    // --- 계정 상태 검사 메소드들 (여기서는 모두 true로 설정) ---
+    // --- 아래 메서드들은 계정 상태 관련 여부를 판단 (예: 계정 잠금 등) ---
 
-    // 계정 만료 없음
+    // 계정이 만료되지 않았는지 여부
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return true; // 항상 유효한 계정으로 간주
     }
 
-    // 계정 잠금 없음
+    // 계정이 잠겨있지 않은지 여부
     @Override
     public boolean isAccountNonLocked() {
-        // 항상 true 반환 = 계정 잠금 없음
-        return true;
+        return true; // 항상 잠금 상태 아님
     }
 
-    // 비밀번호 만료 없음
+    // 비밀번호가 만료되지 않았는지 여부
     @Override
     public boolean isCredentialsNonExpired() {
-        // 항상 true 반환 = 비밀번호 만료 없음
-        return true;
+        return true; // 항상 유효한 비밀번호로 간주
     }
 
-    // 계정이 항상 활성화
+    // 계정이 사용 가능한 상태인지 여부
     @Override
     public boolean isEnabled() {
-        // 항상 true 반환 = 계정 항상 활성화
-        return true;
+        return true; // 항상 활성화된 계정으로 간주
     }
 }
